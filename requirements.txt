@@ -1,0 +1,27 @@
+# Core Flask
+flask==3.0.0
+werkzeug==3.0.1
+python-multipart==0.0.6
+
+# Computer Vision & ML
+opencv-python==4.11.0
+numpy==2.3.4
+scipy==1.16.2
+scikit-learn==1.7.2
+pillow==12.0.0
+
+# Deep Learning (CPU version for Replit compatibility)
+torch==2.9.0
+# Note: ultralytics (YOLOv8) is not compatible with this platform (aarch64 Linux)
+# The hybrid detection system works without it using alternative methods
+
+# Video Processing
+imageio==2.31.5
+
+# Data Processing
+pandas==2.3.3
+matplotlib==3.10.7
+
+# Utilities
+tqdm==4.66.1
+requests==2.31.0

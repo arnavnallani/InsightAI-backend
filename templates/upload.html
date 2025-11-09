@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Match - CourtIQ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .upload-container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 20px;
+        }
+        
+        .upload-card {
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            padding: 60px;
+            border-radius: 10px;
+            margin: 30px 0;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            background: #f0f4ff;
+            border-color: #5568d3;
+        }
+        
+        .upload-area.dragover {
+            background: #e8f0fe;
+            border-color: #4285f4;
+        }
+        
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-name {
+            margin: 20px 0;
+            font-size: 18px;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .upload-tips {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .upload-tips h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .upload-tips ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .upload-tips li {
+            margin: 8px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <h1 style="text-align: center; color: #667eea;">Upload Your Match</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Get revolutionary AI-powered insights in minutes
+        </p>
+        
+        <div class="upload-card">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="upload-area" id="dropArea">
+                    <div class="upload-icon">📹</div>
+                    <h2>Drop your video here</h2>
+                    <p>or click to browse</p>
+                    <input type="file" name="video" id="fileInput" class="file-input" accept="video/*" required>
+                </div>
+                
+                <div class="file-name" id="fileName"></div>
+                
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+                
+                <button type="submit" class="btn-primary" id="uploadBtn" style="font-size: 18px; padding: 15px 40px;">
+                    Continue to Configuration →
+                </button>
+            </form>
+            
+            <div class="upload-tips">
+                <h3>📋 Recording Tips:</h3>
+                <ul>
+                    <li>Record from behind the baseline (center court)</li>
+                    <li>Keep camera stable - use tripod or lean against fence</li>
+                    <li>Ensure full court is visible (both baselines, both sides)</li>
+                    <li>Landscape orientation works best</li>
+                    <li>Any video quality works (even phone video is fine!)</li>
+                </ul>
+                <p style="margin-top: 15px;">
+                    <strong>Supported formats:</strong> MP4, MOV, AVI, MKV, WEBM<br>
+                    <strong>Maximum size:</strong> 2GB
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const dropArea = document.getElementById('dropArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const uploadForm = document.getElementById('uploadForm');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        
+        // Click to upload
+        dropArea.addEventListener('click', () => fileInput.click());
+        
+        // File selection
+        fileInput.addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                fileName.textContent = `Selected: ${file.name} (${formatFileSize(file.size)})`;
+            }
+        });
+        
+        // Drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.add('dragover'));
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropArea.addEventListener(eventName, () => dropArea.classList.remove('dragover'));
+        });
+        
+        dropArea.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            
+            if (files.length > 0) {
+                fileName.textContent = `Selected: ${files[0].name} (${formatFileSize(files[0].size)})`;
+            }
+        });
+        
+        // Form submission
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!fileInput.files.length) {
+                alert('Please select a video file');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // Validate file size (2GB)
+            if (file.size > 2 * 1024 * 1024 * 1024) {
+                alert('File size must be less than 2GB');
+                return;
+            }
+            
+            // Validate file type
+            const allowedTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Please upload a valid video file (MP4, MOV, AVI, MKV, or WEBM)');
+                return;
+            }
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('video', file);
+            
+            // Show progress
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            progressBar.style.display = 'block';
+            
+            try {
+                const xhr = new XMLHttpRequest();
+                
+                // Progress tracking
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressFill.style.width = percentComplete + '%';
+                        progressFill.textContent = Math.round(percentComplete) + '%';
+                    }
+                });
+                
+                // Completion
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        progressFill.textContent = 'Upload complete! Redirecting...';
+                        // Redirect is handled by the server
+                        window.location.href = xhr.responseURL;
+                    } else {
+                        alert('Upload failed. Please try again.');
+                        uploadBtn.disabled = false;
+                        uploadBtn.textContent = 'Continue to Configuration →';
+                        progressBar.style.display = 'none';
+                    }
+                });
+                
+                // Error handling
+                xhr.addEventListener('error', function() {
+                    alert('Upload failed. Please check your connection and try again.');
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = 'Continue to Configuration →';
+                    progressBar.style.display = 'none';
+                });
+                
+                xhr.open('POST', '/upload-video');
+                xhr.send(formData);
+                
+            } catch (error) {
+                alert('Error uploading file: ' + error.message);
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Continue to Configuration →';
+                progressBar.style.display = 'none';
+            }
+        });
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>

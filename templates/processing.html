@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Match - CourtIQ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .processing-container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .match-info-card {
+            background: white;
+            padding: 30px;
+            margin-bottom: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .match-info-card h2 {
+            margin: 0 0 10px 0;
+            color: #667eea;
+        }
+        
+        .vs-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin: 20px 0;
+        }
+        
+        .player-names {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 30px 0;
+        }
+        
+        .player-card {
+            flex: 1;
+            padding: 20px;
+        }
+        
+        .player-card.user {
+            background: #e8f0fe;
+            border-radius: 10px;
+        }
+        
+        .player-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .player-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .processing-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .spinner {
+            width: 80px;
+            height: 80px;
+            margin: 20px auto;
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .status-text {
+            font-size: 24px;
+            color: #667eea;
+            margin: 20px 0;
+        }
+        
+        .progress-steps {
+            margin: 30px 0;
+            text-align: left;
+        }
+        
+        .step {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .step.active {
+            background: #e8f0fe;
+            border-left: 4px solid #667eea;
+        }
+        
+        .step.complete {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .step-icon {
+            font-size: 24px;
+        }
+        
+        .step-text {
+            flex: 1;
+        }
+        
+        .estimate {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 8px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="processing-container">
+        <h1 style="color: #667eea;">Analyzing Your Match</h1>
+        
+        <!-- Match Info -->
+        <div class="match-info-card">
+            <h2>Match Details</h2>
+            <div class="player-names">
+                <div class="player-card user">
+                    <div class="player-label">YOU</div>
+                    <div class="player-name">{{ match.get_user_name() }}</div>
+                </div>
+                <div class="vs-text">VS</div>
+                <div class="player-card">
+                    <div class="player-label">OPPONENT</div>
+                    <div class="player-name">{{ match.get_opponent_name() }}</div>
+                </div>
+            </div>
+            <p style="color: #666;">{{ match.config.set_format.replace('_', ' ').title() }}</p>
+        </div>
+        
+        <!-- Processing Status -->
+        <div class="processing-card">
+            <div class="spinner"></div>
+            <div class="status-text">Processing Your Match...</div>
+            
+            <div class="progress-steps">
+                <div class="step complete">
+                    <div class="step-icon">✅</div>
+                    <div class="step-text">
+                        <strong>Video Uploaded</strong>
+                        <div style="font-size: 14px; color: #666;">Ready for analysis</div>
+                    </div>
+                </div>
+                
+                <div class="step complete">
+                    <div class="step-icon">✅</div>
+                    <div class="step-text">
+                        <strong>Court Calibrated</strong>
+                        <div style="font-size: 14px; color: #666;">Court boundaries mapped</div>
+                    </div>
+                </div>
+                
+                <div class="step active">
+                    <div class="step-icon">🔄</div>
+                    <div class="step-text">
+                        <strong>Detecting Ball</strong>
+                        <div style="font-size: 14px; color: #666;">Tracking ball movement frame-by-frame</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-icon">⏳</div>
+                    <div class="step-text">
+                        <strong>Analyzing Patterns</strong>
+                        <div style="font-size: 14px; color: #666;">Running 7 advanced analyses</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-icon">⏳</div>
+                    <div class="step-text">
+                        <strong>Generating Insights</strong>
+                        <div style="font-size: 14px; color: #666;">Creating your personalized report</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="estimate">
+                <strong>⏱️ Estimated Time:</strong> 3-5 minutes<br>
+                <small>You can close this page - we'll email you when ready!</small>
+            </div>
+            
+            <p style="margin-top: 30px; color: #666;">
+                We're analyzing:<br>
+                • Shot DNA - Your pattern fingerprint<br>
+                • Counterfactual Analysis - Missed opportunities<br>
+                • Momentum Flow - Psychological topology<br>
+                • Shadow AI - Your AI clone<br>
+                • Fatigue Fingerprint - Performance degradation<br>
+                • Decision Heatmap - Where you think wrong<br>
+                • Chaos Theory - Butterfly effect moments
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // Poll for status updates
+        const matchId = '{{ match_id }}';
+        
+        async function checkStatus() {
+            try {
+                const response = await fetch(`/api/status/${matchId}`);
+                const data = await response.json();
+                
+                if (data.status === 'complete') {
+                    window.location.href = `/results/${matchId}`;
+                } else if (data.status === 'failed') {
+                    alert('Processing failed. Please try again.');
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Error checking status:', error);
+            }
+        }
+        
+        // Check every 5 seconds
+        setInterval(checkStatus, 5000);
+        
+        // Also trigger processing if not already started
+        window.addEventListener('load', async function() {
+            try {
+                const response = await fetch(`/process/${matchId}`);
+                // Processing will happen in background
+            } catch (error) {
+                console.error('Error starting processing:', error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibrate Court - CourtIQ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .calibrate-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .match-info {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .match-info h3 {
+            margin: 0;
+            color: #667eea;
+        }
+        
+        .match-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+        
+        .calibration-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .calibration-section h2 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        
+        #calibrationCanvas {
+            border: 2px solid #667eea;
+            cursor: crosshair;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .instructions {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 8px 0;
+        }
+        
+        .corner-status {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .corner-item {
+            padding: 10px 20px;
+            border-radius: 5px;
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+        
+        .corner-item.done {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="calibrate-container">
+        <h1 style="text-align: center; color: #667eea;">Calibrate Your Court</h1>
+        
+        <!-- Match Info -->
+        <div class="match-info">
+            <h3>{{ match.get_user_name() }} vs {{ match.get_opponent_name() }}</h3>
+            <p>{{ match.config.set_format.replace('_', ' ').title() }} Match</p>
+        </div>
+        
+        <!-- Calibration Section -->
+        <div class="calibration-section">
+            <h2>Click the 4 Court Corners</h2>
+            
+            <div class="instructions">
+                <p><strong>Instructions:</strong></p>
+                <ol>
+                    <li>Click on the <strong>top-left</strong> corner of the court</li>
+                    <li>Click on the <strong>top-right</strong> corner</li>
+                    <li>Click on the <strong>bottom-left</strong> corner</li>
+                    <li>Click on the <strong>bottom-right</strong> corner</li>
+                    <li>Review your selections and click "Start Processing"</li>
+                </ol>
+                <p><strong>💡 Tip:</strong> Click on the outermost corners where the court lines meet.</p>
+            </div>
+            
+            <div class="corner-status">
+                <div class="corner-item" id="status-tl">1️⃣ Top-Left</div>
+                <div class="corner-item" id="status-tr">2️⃣ Top-Right</div>
+                <div class="corner-item" id="status-bl">3️⃣ Bottom-Left</div>
+                <div class="corner-item" id="status-br">4️⃣ Bottom-Right</div>
+            </div>
+            
+            <div class="canvas-container">
+                <canvas id="calibrationCanvas"></canvas>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn-secondary" id="resetBtn">↻ Reset Points</button>
+                <button class="btn-primary" id="submitBtn" disabled>Start Processing →</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('calibrationCanvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        const corners = {
+            topLeft: null,
+            topRight: null,
+            bottomLeft: null,
+            bottomRight: null
+        };
+        
+        const cornerOrder = ['topLeft', 'topRight', 'bottomLeft', 'bottomRight'];
+        let currentCornerIndex = 0;
+        
+        // Load image
+        img.onload = function() {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = '{{ frame_url }}';
+        
+        // Handle canvas clicks
+        canvas.addEventListener('click', function(e) {
+            if (currentCornerIndex >= 4) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            // Store corner
+            const cornerName = cornerOrder[currentCornerIndex];
+            corners[cornerName] = [Math.round(x), Math.round(y)];
+            
+            // Update status
+            const statusIds = ['status-tl', 'status-tr', 'status-bl', 'status-br'];
+            document.getElementById(statusIds[currentCornerIndex]).classList.add('done');
+            
+            // Draw point
+            redrawCanvas();
+            
+            currentCornerIndex++;
+            
+            // Enable submit if all corners marked
+            if (currentCornerIndex === 4) {
+                document.getElementById('submitBtn').disabled = false;
+            }
+        });
+        
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            
+            // Draw marked corners
+            const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'];
+            const labels = ['TL', 'TR', 'BL', 'BR'];
+            
+            cornerOrder.forEach((cornerName, index) => {
+                if (corners[cornerName]) {
+                    const [x, y] = corners[cornerName];
+                    
+                    // Draw circle
+                    ctx.fillStyle = colors[index];
+                    ctx.beginPath();
+                    ctx.arc(x, y, 10, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw label
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(labels[index], x, y);
+                    
+                    // Draw number
+                    ctx.fillStyle = colors[index];
+                    ctx.font = 'bold 20px Arial';
+                    ctx.fillText((index + 1).toString(), x, y - 25);
+                }
+            });
+            
+            // Draw lines between corners if all are set
+            if (currentCornerIndex === 4) {
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.moveTo(corners.topLeft[0], corners.topLeft[1]);
+                ctx.lineTo(corners.topRight[0], corners.topRight[1]);
+                ctx.lineTo(corners.bottomRight[0], corners.bottomRight[1]);
+                ctx.lineTo(corners.bottomLeft[0], corners.bottomLeft[1]);
+                ctx.closePath();
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            corners.topLeft = null;
+            corners.topRight = null;
+            corners.bottomLeft = null;
+            corners.bottomRight = null;
+            currentCornerIndex = 0;
+            
+            // Reset status
+            document.querySelectorAll('.corner-item').forEach(item => {
+                item.classList.remove('done');
+            });
+            
+            document.getElementById('submitBtn').disabled = true;
+            redrawCanvas();
+        });
+        
+        // Submit button
+        document.getElementById('submitBtn').addEventListener('click', async function() {
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Saving calibration...';
+            
+            const calibrationData = {
+                top_left: corners.topLeft,
+                top_right: corners.topRight,
+                bottom_left: corners.bottomLeft,
+                bottom_right: corners.bottomRight
+            };
+            
+            try {
+                const response = await fetch('/save-calibration/{{ match_id }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(calibrationData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    btn.textContent = 'Calibration saved! Redirecting...';
+                    // Redirect to processing
+                    setTimeout(() => {
+                        window.location.href = '/processing/{{ match_id }}';
+                    }, 1000);
+                } else {
+                    alert('Error saving calibration. Please try again.');
+                    btn.disabled = false;
+                    btn.textContent = 'Start Processing →';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Start Processing →';
+            }
+        });
+    </script>
+</body>
+</html>

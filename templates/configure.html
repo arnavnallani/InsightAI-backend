@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configure Match - CourtIQ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .configure-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        
+        .section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .section h2 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .player-identification {
+            text-align: center;
+        }
+        
+        .video-preview {
+            margin: 20px 0;
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        
+        .video-preview img {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .player-selection {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 30px 0;
+        }
+        
+        .player-option {
+            flex: 1;
+            max-width: 250px;
+            padding: 30px 20px;
+            border: 3px solid #ddd;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        .player-option:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .player-option input[type="radio"] {
+            display: none;
+        }
+        
+        .player-option input[type="radio"]:checked + .option-content {
+            background: #667eea;
+            color: white;
+        }
+        
+        .option-content {
+            padding: 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .player-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .help-text {
+            color: #666;
+            font-size: 14px;
+            font-style: italic;
+            margin-top: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        
+        .submit-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        
+        .submit-btn:hover {
+            background: #5568d3;
+            transform: scale(1.02);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="configure-container">
+        <h1 style="text-align: center; color: #667eea;">Configure Your Match</h1>
+        
+        <form id="configForm">
+            <!-- Player Identification Section -->
+            <div class="section player-identification">
+                <h2>1. Who Are You?</h2>
+                <p>First, let us know which player you are in the video.</p>
+                
+                <div class="video-preview">
+                    <img id="firstFrame" src="{{ url_for('static', filename='../uploads/' + match_id + '_frame.jpg') }}" alt="First frame of video">
+                </div>
+                
+                <div class="player-selection">
+                    <label class="player-option">
+                        <input type="radio" name="user_player" value="1" required>
+                        <div class="option-content">
+                            <div class="player-icon">👤</div>
+                            <h3>Player 1</h3>
+                            <p>Bottom/Near Side</p>
+                            <p class="help-text">Closer to camera</p>
+                        </div>
+                    </label>
+                    
+                    <label class="player-option">
+                        <input type="radio" name="user_player" value="2" required>
+                        <div class="option-content">
+                            <div class="player-icon">👤</div>
+                            <h3>Player 2</h3>
+                            <p>Top/Far Side</p>
+                            <p class="help-text">Further from camera</p>
+                        </div>
+                    </label>
+                </div>
+                
+                <p class="help-text">
+                    💡 Tip: Player 1 is typically at the bottom of the screen (closer to the camera)
+                </p>
+            </div>
+            
+            <!-- Player Names Section -->
+            <div class="section">
+                <h2>2. Player Names</h2>
+                
+                <div class="form-group">
+                    <label for="user_name">Your Name:</label>
+                    <input type="text" id="user_name" name="user_name" placeholder="Enter your name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="opponent_name">Opponent's Name:</label>
+                    <input type="text" id="opponent_name" name="opponent_name" placeholder="Enter opponent's name" required>
+                </div>
+            </div>
+            
+            <!-- Match Scoring Format Section -->
+            <div class="section">
+                <h2>3. Match Format</h2>
+                
+                <div class="form-group">
+                    <label for="set_format">Match Format:</label>
+                    <select id="set_format" name="set_format">
+                        <option value="best_of_3" selected>Best of 3 Sets</option>
+                        <option value="best_of_5">Best of 5 Sets</option>
+                        <option value="single_set">Single Set</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="games_per_set">Games Per Set:</label>
+                    <select id="games_per_set" name="games_per_set">
+                        <option value="4">4 Games</option>
+                        <option value="6" selected>6 Games (Standard)</option>
+                        <option value="8">8 Games</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tiebreak_at">Tiebreak At:</label>
+                    <select id="tiebreak_at" name="tiebreak_at">
+                        <option value="5">5-5</option>
+                        <option value="6" selected>6-6 (Standard)</option>
+                        <option value="7">7-7</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tiebreak_points">Tiebreak Points to Win:</label>
+                    <select id="tiebreak_points" name="tiebreak_points">
+                        <option value="7" selected>7 Points (Standard)</option>
+                        <option value="10">10 Points</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="deciding_set_format">Deciding Set Format:</label>
+                    <select id="deciding_set_format" name="deciding_set_format">
+                        <option value="regular">Regular Set</option>
+                        <option value="match_tiebreak" selected>Match Tiebreak (10 points)</option>
+                        <option value="super_tiebreak">Super Tiebreak</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="match_tiebreak_points">Match Tiebreak Points:</label>
+                    <select id="match_tiebreak_points" name="match_tiebreak_points">
+                        <option value="7">7 Points</option>
+                        <option value="10" selected>10 Points (Standard)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="use_ads" name="use_ads" checked>
+                    <label for="use_ads">Use Ad Scoring (Deuce/Advantage)</label>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="use_no_ad" name="use_no_ad">
+                    <label for="use_no_ad">No-Ad Scoring (One point at deuce)</label>
+                </div>
+            </div>
+            
+            <button type="submit" class="submit-btn">Continue to Court Calibration →</button>
+        </form>
+    </div>
+    
+    <script>
+        const form = document.getElementById('configForm');
+        
+        // Highlight selected player option
+        document.querySelectorAll('input[name="user_player"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.player-option').forEach(option => {
+                    option.style.borderColor = '#ddd';
+                    option.style.background = 'white';
+                });
+                this.closest('.player-option').style.borderColor = '#667eea';
+                this.closest('.player-option').style.background = '#f0f4ff';
+            });
+        });
+        
+        // Handle form submission
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = form.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving configuration...';
+            
+            // Gather form data
+            const formData = {
+                user_player: parseInt(document.querySelector('input[name="user_player"]:checked').value),
+                user_name: document.getElementById('user_name').value,
+                opponent_name: document.getElementById('opponent_name').value,
+                set_format: document.getElementById('set_format').value,
+                games_per_set: parseInt(document.getElementById('games_per_set').value),
+                tiebreak_at: parseInt(document.getElementById('tiebreak_at').value),
+                tiebreak_points: parseInt(document.getElementById('tiebreak_points').value),
+                deciding_set_format: document.getElementById('deciding_set_format').value,
+                match_tiebreak_points: parseInt(document.getElementById('match_tiebreak_points').value),
+                use_ads: document.getElementById('use_ads').checked,
+                use_no_ad: document.getElementById('use_no_ad').checked
+            };
+            
+            try {
+                const response = await fetch('/save-config/{{ match_id }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Redirect to calibration page
+                    window.location.href = '/calibrate/{{ match_id }}';
+                } else {
+                    alert('Error saving configuration. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Continue to Court Calibration →';
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Continue to Court Calibration →';
+            }
+        });
+    </script>
+</body>
+</html>
